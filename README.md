@@ -1,7 +1,7 @@
 # Language Translator
 
 A clean, single-page language translation tool. Type text, pick a source and target language, and get an instant translation — with swap, copy, and text-to-speech built in.
-
+file:///C:/Users/gurpi/Downloads/translator.html
 ## Features
 
 - Text input with source & target language selectors (30 languages)
