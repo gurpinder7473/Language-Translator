@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wayfare — Language Translator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F6F2E9;
+    --paper-dim: #EFE9DA;
+    --ink: #1C2321;
+    --ink-soft: #4A5350;
+    --teal: #1F4B4A;
+    --coral: #E2572B;
+    --gold: #C99A2E;
+    --line: #D8CFBA;
+    --white: #FFFDF8;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 48px 24px 64px;
+  }
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  header{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .eyebrow{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--coral);
+    margin: 0 0 10px;
+  }
+  h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(32px, 5vw, 46px);
+    line-height: 1.05;
+    margin: 0;
+    color: var(--teal);
+  }
+  h1 em{
+    font-style: italic;
+    color: var(--coral);
+  }
+  .tagline{
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    max-width: 260px;
+    line-height: 1.5;
+    text-align: right;
+  }
+
+  /* Desk / panels */
+  .desk{
+    display: grid;
+    grid-template-columns: 1fr 64px 1fr;
+    gap: 0;
+    align-items: stretch;
+  }
+  @media (max-width: 720px){
+    .desk{ grid-template-columns: 1fr; gap: 20px; }
+    .dial-col{ order: 2; margin: -6px auto; }
+    .panel.target{ order: 3; }
+  }
+
+  .panel{
+    background: var(--white);
+    border: 1px solid var(--line);
+    padding: 22px 24px 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 320px;
+    position: relative;
+  }
+  .panel.source{ border-right: none; }
+  .panel.target{ border-left: none; }
+  @media (max-width: 720px){
+    .panel.source, .panel.target{ border: 1px solid var(--line); }
+  }
+
+  .panel-top{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  select{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    background: transparent;
+    border: none;
+    color: var(--teal);
+    font-weight: 500;
+    padding: 4px 22px 4px 0;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%231F4B4A'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 4px center;
+  }
+  select:focus-visible, textarea:focus-visible, button:focus-visible{
+    outline: 2px solid var(--coral);
+    outline-offset: 2px;
+  }
+  .stamp-label{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  textarea{
+    flex: 1;
+    resize: none;
+    border: none;
+    background: transparent;
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    line-height: 1.5;
+    color: var(--ink);
+    width: 100%;
+    min-height: 200px;
+  }
+  textarea::placeholder{ color: #B9AF98; font-style: italic; }
+
+  .output-text{
+    flex: 1;
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    line-height: 1.5;
+    color: var(--ink);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+  .output-text.empty{ color: #B9AF98; font-style: italic; font-size: 15px; font-family: 'Inter', sans-serif; }
+  .output-text.error{ color: var(--coral); font-family: 'Inter', sans-serif; font-size: 14px; font-style: normal; }
+
+  .panel-bottom{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+  }
+  .count{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .tools{ display:flex; gap: 6px; }
+  .icon-btn{
+    background: none;
+    border: 1px solid transparent;
+    width: 30px; height: 30px;
+    border-radius: 3px;
+    display:flex; align-items:center; justify-content:center;
+    cursor: pointer;
+    color: var(--teal);
+    transition: background 0.15s, color 0.15s, border-color .15s;
+  }
+  .icon-btn:hover{ background: var(--paper-dim); border-color: var(--line); }
+  .icon-btn:active{ transform: translateY(1px); }
+  .icon-btn svg{ width: 16px; height: 16px; }
+  .icon-btn.copied{ color: var(--coral); }
+
+  /* Dial (swap) */
+  .dial-col{
+    display:flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dial{
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--teal);
+    border: 3px solid var(--paper);
+    box-shadow: 0 0 0 1px var(--line);
+    display:flex; align-items:center; justify-content:center;
+    cursor: pointer;
+    color: var(--paper);
+    transition: transform 0.4s cubic-bezier(.2,.8,.2,1), background .2s;
+    flex-shrink: 0;
+  }
+  .dial:hover{ background: var(--coral); }
+  .dial.spin{ transform: rotate(180deg); }
+  .dial svg{ width: 20px; height: 20px; }
+
+  /* Action row */
+  .action-row{
+    display:flex;
+    justify-content: center;
+    margin-top: 28px;
+  }
+  .translate-btn{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--coral);
+    color: var(--white);
+    border: none;
+    padding: 14px 40px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .translate-btn:hover{ background: #c94a23; }
+  .translate-btn:active{ transform: translateY(1px); }
+  .translate-btn:disabled{ background: #d9b8ac; cursor: default; }
+
+  .status{
+    text-align:center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 12px;
+    min-height: 14px;
+  }
+
+  footer{
+    text-align:center;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 48px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <p class="eyebrow">No. 01 — Correspondence Desk</p>
+      <h1>Say it in <em>any</em> tongue</h1>
+    </div>
+    <p class="tagline">Type on the left, read on the right. Swap, copy, or hear it spoken aloud.</p>
+  </header>
+
+  <div class="desk">
+    <div class="panel source">
+      <div class="panel-top">
+        <select id="sourceLang" aria-label="Source language"></select>
+        <span class="stamp-label" id="sourceTag">SRC</span>
+      </div>
+      <textarea id="inputText" placeholder="Begin writing here…" maxlength="4000"></textarea>
+      <div class="panel-bottom">
+        <span class="count"><span id="charCount">0</span> / 4000</span>
+        <div class="tools">
+          <button class="icon-btn" id="listenSource" title="Listen" aria-label="Listen to source text">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+          </button>
+          <button class="icon-btn" id="clearInput" title="Clear" aria-label="Clear text">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dial-col">
+      <button class="dial" id="swapBtn" title="Swap languages" aria-label="Swap languages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+      </button>
+    </div>
+
+    <div class="panel target">
+      <div class="panel-top">
+        <select id="targetLang" aria-label="Target language"></select>
+        <span class="stamp-label" id="targetTag">DST</span>
+      </div>
+      <div class="output-text empty" id="outputText">Your translation will appear here.</div>
+      <div class="panel-bottom">
+        <span class="count" id="outCount"></span>
+        <div class="tools">
+          <button class="icon-btn" id="listenTarget" title="Listen" aria-label="Listen to translation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+          </button>
+          <button class="icon-btn" id="copyBtn" title="Copy translation" aria-label="Copy translation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="translate-btn" id="translateBtn">Get Translation →</button>
+  </div>
+  <p class="status" id="statusMsg"></p>
+
+  <footer>Powered by Claude · Text‑to‑speech via your browser</footer>
+</div>
+
+<script>
+const LANGS = [
+  ["en","English"], ["es","Spanish"], ["fr","French"], ["de","German"],
+  ["it","Italian"], ["pt","Portuguese"], ["nl","Dutch"], ["ru","Russian"],
+  ["zh","Chinese (Simplified)"], ["ja","Japanese"], ["ko","Korean"],
+  ["ar","Arabic"], ["hi","Hindi"], ["bn","Bengali"], ["pa","Punjabi"],
+  ["ur","Urdu"], ["tr","Turkish"], ["vi","Vietnamese"], ["th","Thai"],
+  ["pl","Polish"], ["sv","Swedish"], ["el","Greek"], ["he","Hebrew"],
+  ["id","Indonesian"], ["uk","Ukrainian"], ["fa","Persian"], ["ta","Tamil"],
+  ["te","Telugu"], ["ms","Malay"], ["ro","Romanian"]
+];
+
+const sourceSel = document.getElementById('sourceLang');
+const targetSel = document.getElementById('targetLang');
+const inputText = document.getElementById('inputText');
+const outputText = document.getElementById('outputText');
+const charCount = document.getElementById('charCount');
+const outCount = document.getElementById('outCount');
+const statusMsg = document.getElementById('statusMsg');
+const translateBtn = document.getElementById('translateBtn');
+const sourceTag = document.getElementById('sourceTag');
+const targetTag = document.getElementById('targetTag');
+
+function populate(select, defaultCode){
+  LANGS.forEach(([code, name])=>{
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = name;
+    if(code === defaultCode) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+populate(sourceSel, 'en');
+populate(targetSel, 'es');
+
+function updateTags(){
+  sourceTag.textContent = sourceSel.value.toUpperCase();
+  targetTag.textContent = targetSel.value.toUpperCase();
+}
+updateTags();
+sourceSel.addEventListener('change', updateTags);
+targetSel.addEventListener('change', updateTags);
+
+inputText.addEventListener('input', ()=>{
+  charCount.textContent = inputText.value.length;
+});
+
+document.getElementById('clearInput').addEventListener('click', ()=>{
+  inputText.value = '';
+  charCount.textContent = '0';
+  inputText.focus();
+});
+
+document.getElementById('swapBtn').addEventListener('click', (e)=>{
+  const dial = e.currentTarget;
+  dial.classList.add('spin');
+  setTimeout(()=> dial.classList.remove('spin'), 400);
+
+  const sVal = sourceSel.value, tVal = targetSel.value;
+  sourceSel.value = tVal;
+  targetSel.value = sVal;
+  updateTags();
+
+  const currentOutput = outputText.classList.contains('empty') ? '' : outputText.textContent;
+  if(currentOutput){
+    inputText.value = currentOutput;
+    charCount.textContent = inputText.value.length;
+  }
+});
+
+const LANG_NAMES = Object.fromEntries(LANGS);
+
+async function tryGoogle(text, src, tgt){
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${tgt}&dt=t&q=${encodeURIComponent(text)}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('Google endpoint returned ' + res.status);
+  const data = await res.json();
+  const translated = data[0].map(chunk => chunk[0]).join('');
+  if(!translated) throw new Error('Google endpoint returned empty result');
+  return translated;
+}
+
+async function tryMyMemory(text, src, tgt){
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('MyMemory endpoint returned ' + res.status);
+  const data = await res.json();
+  if(data.responseStatus && data.responseStatus !== 200){
+    throw new Error(data.responseDetails || 'MyMemory translation failed');
+  }
+  const translated = data.responseData && data.responseData.translatedText;
+  if(!translated) throw new Error('MyMemory endpoint returned empty result');
+  return translated;
+}
+
+async function translate(){
+  const text = inputText.value.trim();
+  if(!text){
+    statusMsg.textContent = 'Write something first.';
+    return;
+  }
+  const src = sourceSel.value, tgt = targetSel.value;
+  if(src === tgt){
+    outputText.classList.remove('empty','error');
+    outputText.textContent = text;
+    outCount.textContent = text.length + ' characters';
+    statusMsg.textContent = 'Source and target are the same language.';
+    return;
+  }
+
+  translateBtn.disabled = true;
+  translateBtn.textContent = 'Translating…';
+  statusMsg.textContent = '';
+
+  const errors = [];
+
+  try{
+    let translated;
+    try{
+      translated = await tryGoogle(text, src, tgt);
+    }catch(e1){
+      errors.push('Google: ' + e1.message);
+      console.warn('Google endpoint failed, falling back to MyMemory', e1);
+      translated = await tryMyMemory(text, src, tgt);
+    }
+
+    outputText.classList.remove('empty','error');
+    outputText.textContent = translated;
+    outCount.textContent = translated.length + ' characters';
+    statusMsg.textContent = '';
+  }catch(err){
+    errors.push('MyMemory: ' + err.message);
+    outputText.classList.add('error');
+    outputText.classList.remove('empty');
+    outputText.textContent = "Couldn't reach any translation service. This usually means either you're offline, or your browser/network is blocking requests to translate.googleapis.com and api.mymemory.translated.net. Check the address bar for a shield/block icon, or try a different network.";
+    outCount.textContent = '';
+    statusMsg.textContent = errors.join(' | ');
+    console.error('All translation providers failed:', errors);
+  }finally{
+    translateBtn.disabled = false;
+    translateBtn.textContent = 'Get Translation →';
+  }
+}
+
+translateBtn.addEventListener('click', translate);
+inputText.addEventListener('keydown', (e)=>{
+  if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){
+    translate();
+  }
+});
+
+document.getElementById('copyBtn').addEventListener('click', (e)=>{
+  const text = outputText.classList.contains('empty') ? '' : outputText.textContent;
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = e.currentTarget;
+    btn.classList.add('copied');
+    statusMsg.textContent = 'Copied to clipboard.';
+    setTimeout(()=> btn.classList.remove('copied'), 1200);
+  });
+});
+
+function speak(text, lang){
+  if(!text) return;
+  if(!('speechSynthesis' in window)){
+    statusMsg.textContent = 'Text-to-speech is not supported in this browser.';
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = lang;
+  window.speechSynthesis.speak(utter);
+}
+
+document.getElementById('listenSource').addEventListener('click', ()=>{
+  speak(inputText.value.trim(), sourceSel.value);
+});
+document.getElementById('listenTarget').addEventListener('click', ()=>{
+  const text = outputText.classList.contains('empty') ? '' : outputText.textContent;
+  speak(text, targetSel.value);
+});
+</script>
+</body>
+</html>
